@@ -5,7 +5,12 @@
 //> HEAD -> SUPER
 use super::{
     state::State,
-    expression::expression
+    expression::expression,
+    keyword::keyword,
+    hook::hook,
+    symbol::Symbol,
+    optional::optional,
+    multiple::multiple
 };
 
 //> HEAD -> SYNTAX
@@ -21,7 +26,7 @@ use crate::{
         Undefined,
         Call
     },
-    failure::Failure
+    error::Error
 };
 
 
@@ -30,76 +35,75 @@ use crate::{
 //^
 
 //> VALUE -> DISPATCH
-pub fn value<'input>(
-    state: &mut State<'input>
-) -> Result<Value<'input>, Failure<'input>> {return match state.optional(infinite) {
-    None => match state.optional(identifier) {
-        None => match state.optional(nest) {
-            None => match state.optional(vector) {
-                None => match state.optional(number) {
-                    None => match state.optional(absolute) {
-                        None => match state.optional(undefined) {
-                            None => match state.optional(call) {
-                                Some(call) => Ok(Value::Call(call)),
-                                None => Err(Failure::CouldntParseValue)
-                            },
-                            Some(undefined) => Ok(Value::Undefined(undefined))
-                        },
-                        Some(absolute) => Ok(Value::Absolute(absolute))
-                    },
-                    Some(number) => Ok(Value::Number(number))
-                },
-                Some(vector) => Ok(Value::Vector(vector))
-            },
-            Some(nest) => Ok(Value::Nest(nest))
-        },
-        Some(identifier) => Ok(Value::Identifier(identifier))
-    },
-    Some(infinite) => Ok(Value::Infinite(infinite))
-}}
+pub fn value<'input>(state: &mut State<'input>) -> Result<Value<'input>, Error<'input>> {
+    return match optional!(state, infinite) {
+        Some(infinite) => Ok(Value::Infinite(infinite)),
+        _ => match optional!(state, call) {
+            Some(call) if state.symbols.get(
+                call.identifier.name
+            ).is_some_and(Symbol::is_function) => Ok(Value::Call(call)),
+            _ => match optional!(state, nest) {
+                Some(nest) => Ok(Value::Nest(nest)),
+                _ => match optional!(state, vector) {
+                    Some(vector) => Ok(Value::Vector(vector)),
+                    _ => match optional!(state, number) {
+                        Some(number) => Ok(Value::Number(number)),
+                        _ => match optional!(state, absolute) {
+                            Some(absolute) => Ok(Value::Absolute(absolute)),
+                            _ => match optional!(state, undefined) {
+                                Some(undefined) => Ok(Value::Undefined(undefined)),
+                                _ => match optional!(state, identifier) {
+                                    Some(identifier) => Ok(Value::Identifier(identifier)),
+                                    _ => Err(Error::CouldntParseValue)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 //> VALUE -> INFINITE
-pub fn infinite<'input>(state: &mut State<'input>) -> Result<Infinite, Failure<'input>> {
-    state.advance(|byte| byte == b'i')?;
-    state.advance(|byte| byte == b'n')?;
-    state.advance(|byte| byte == b'f')?;
+pub fn infinite<'input>(state: &mut State<'input>) -> Result<Infinite, Error<'input>> {
+    keyword!(state, [b'i', b'n', b'f'])?;
     return Ok(Infinite);
 }
 
 //> VALUE -> IDENTIFIER
 pub fn identifier<'input>(
     state: &mut State<'input>
-) -> Result<Identifier<'input>, Failure<'input>> {return state.record(|byte| {
-    matches!(byte, b'a'..=b'z' | b'A'..=b'Z' | b'$'..=b'%')
-}).map(|name| Identifier {
-    name: name
+) -> Result<Identifier<'input>, Error<'input>> {return Ok(Identifier {
+    name: hook!(
+        state, 
+        b'a'..=b'z' | b'A'..=b'Z' | b'$'..=b'%', 
+        b"lim" | b"of" | b"inf" | b""
+    )?
 })}
 
 //> VALUE -> NEST
-pub fn nest<'input>(state: &mut State<'input>) -> Result<Nest<'input>, Failure<'input>> {
-    state.advance(|byte| byte == b'(')?;
-    let inside = state.optional(expression);
-    state.advance(|byte| byte == b')')?;
+pub fn nest<'input>(state: &mut State<'input>) -> Result<Nest<'input>, Error<'input>> {
+    keyword!(state, [b'('])?;
+    let inside = optional!(state, expression);
+    keyword!(state, [b')'])?;
     return Ok(Nest {
         inside: inside
     });
 }
 
 //> VALUE -> VECTOR
-pub fn vector<'input>(
-    state: &mut State<'input>
-) -> Result<Vector<'input>, Failure<'input>> {
-    state.advance(|byte| byte == b'[')?;
-    let expressions = state.optional(|state| {
-        let first = expression(state)?;
-        let mut rest = state.multiple(|state| {
-            state.advance(|byte| byte == b',')?;
+pub fn vector<'input>(state: &mut State<'input>) -> Result<Vector<'input>, Error<'input>> {
+    keyword!(state, [b'['])?;
+    let expressions = optional!(state, {
+        let mut rest = Vec::from([expression(state)?]);
+        rest.extend(multiple!(state, {
+            keyword!(state, [b',', b' '])?;
             expression(state)
-        });
-        rest.insert(0, first);
+        }));
         Ok(rest)
     }).unwrap_or_default();
-    state.advance(|byte| byte == b']')?;
+    keyword!(state, [b']'])?;
     return Ok(Vector {
         expressions: expressions
     });
@@ -108,44 +112,42 @@ pub fn vector<'input>(
 //> VALUE -> NUMBER
 pub fn number<'input>(
     state: &mut State<'input>
-) -> Result<Number<'input>, Failure<'input>> {
-    return state.record(|byte| matches!(byte, b'0'..=b'9' | b'_')).map(|number| Number {
-        number: number
-    });
-}
+) -> Result<Number<'input>, Error<'input>> {return Ok(Number {
+    number: hook!(state, b'0'..=b'9', b"")?
+})}
 
 //> VALUE -> ABSOLUTE
 pub fn absolute<'input>(
     state: &mut State<'input>
-) -> Result<Absolute<'input>, Failure<'input>> {
-    state.advance(|byte| byte == b'|')?;
+) -> Result<Absolute<'input>, Error<'input>> {
+    keyword!(state, [b'|'])?;
     let expression = expression(state)?;
-    state.advance(|byte| byte == b'|')?;
+    keyword!(state, [b'|'])?;
     return Ok(Absolute {
         expression: expression
     });
 }
 
 //> VALUE -> UNDEFINED
-pub fn undefined<'input>(state: &mut State<'input>) -> Result<Undefined, Failure<'input>> {
-    state.advance(|byte| byte == b'?')?;
+pub fn undefined<'input>(state: &mut State<'input>) -> Result<Undefined, Error<'input>> {
+    keyword!(state, [b'?'])?;
     return Ok(Undefined);
 }
 
 //> VALUE -> CALL
-pub fn call<'input>(state: &mut State<'input>) -> Result<Call<'input>, Failure<'input>> {
+pub fn call<'input>(state: &mut State<'input>) -> Result<Call<'input>, Error<'input>> {
     let identifier = identifier(state)?;
-    state.advance(|byte| byte == b'(')?;
-    let with = state.optional(|state| {
+    keyword!(state, [b'('])?;
+    let with = optional!(state, {
         let first = expression(state)?;
-        let mut rest = state.multiple(|state| {
-            state.advance(|byte| byte == b',')?;
+        let mut rest = multiple!(state, {
+            keyword!(state, [b',', b' '])?;
             expression(state)
         });
         rest.insert(0, first);
         Ok(rest)
     }).unwrap_or_default();
-    state.advance(|byte| byte == b')')?;
+    keyword!(state, [b')'])?;
     return Ok(Call {
         identifier: identifier,
         with: with

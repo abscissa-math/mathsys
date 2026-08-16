@@ -21,7 +21,7 @@ use super::LaTeX;
 //> STATEMENT -> DEFINITION
 impl<'valid> LaTeX for Definition<'valid> {
     fn render(&self) -> String {
-        return format!("{}:={}", self.identifier.render(), self.expression.render());
+        return format!("{}:={}", self.of.render(), self.expression.render());
     }
 }
 
@@ -29,7 +29,7 @@ impl<'valid> LaTeX for Definition<'valid> {
 impl<'valid> LaTeX for Function<'valid> {
     fn render(&self) -> String {return format!(
         r"{}\left( {}\right) :={}", 
-        self.identifier.render(),
+        self.name.render(),
         self.arguments.iter().map(LaTeX::render).collect::<Vec<String>>().join(","),
         self.expression.render()
     )}

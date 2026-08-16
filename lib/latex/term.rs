@@ -17,10 +17,10 @@ use super::LaTeX;
 impl<'valid> LaTeX for Term<'valid> {
     fn render(&self) -> String {return if self.denominator.is_empty() {format!(
         "{}",
-        self.numerator.iter().map(LaTeX::render).collect::<String>()
+        self.numerator.iter().map(LaTeX::render).collect::<Vec<String>>().join(r"\cdot ")
     )} else {format!(
         "\\frac{{{}}}{{{}}}",
-        self.numerator.iter().map(LaTeX::render).collect::<String>(),
-        self.denominator.iter().map(LaTeX::render).collect::<String>()
+        self.numerator.iter().map(LaTeX::render).collect::<Vec<String>>().join(r"\cdot "),
+        self.denominator.iter().map(LaTeX::render).collect::<Vec<String>>().join(r"\cdot ")
     )}}
 }

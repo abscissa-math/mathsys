@@ -5,13 +5,18 @@
 //> HEAD -> SUPER
 use super::{
     state::State,
-    term::term
+    term::term,
+    keyword::keyword,
+    choice::choice,
+    optional::optional,
+    multiple::multiple,
+    more::more
 };
 
 //> HEAD -> CRATE
 use crate::{
     syntax::expression::Expression,
-    failure::Failure
+    error::Error
 };
 
 
@@ -22,15 +27,14 @@ use crate::{
 //> EXPRESSION -> FUNCTION
 pub fn expression<'input>(
     state: &mut State<'input>
-) -> Result<Expression<'input>, Failure<'input>> {
-    let signs = state.multiple(|state| {
-        state.advance(|byte| matches!(byte, b'+' | b'-')).map(|sign| sign == b'+')
-    });
-    let first = term(state)?;
-    let mut terms = state.multiple(|state| Ok((state.more(|state| {
-        state.advance(|byte| matches!(byte, b'+' | b'-')).map(|sign| sign == b'+')
-    })?, term(state)?)));
-    terms.insert(0, (signs, first));
+) -> Result<Expression<'input>, Error<'input>> {
+    let mut terms = Vec::from([(multiple!(state, choice!(state, b'+', b'-')), term(state)?)]);
+    terms.extend(multiple!(state, {
+        optional!(state, keyword!(state, [b' ']));
+        let signs = more!(state, choice!(state, b'+', b'-'))?;
+        if !signs.is_empty() {keyword!(state, [b' '])?}
+        Ok((signs, term(state)?))
+    }));
     return Ok(Expression {
         terms: terms
     });

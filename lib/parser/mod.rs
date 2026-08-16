@@ -3,11 +3,22 @@
 //^
 
 //> HEAD -> MODULES
+pub mod check;
+pub mod checkpoint;
+pub mod choice;
+pub mod depleted;
 pub mod expression;
 pub mod factor;
+pub mod hook;
+pub mod keyword;
+pub mod more;
+pub mod multiple;
+pub mod optional;
+pub mod position;
 pub mod start;
 pub mod state;
 pub mod statement;
+pub mod symbol;
 pub mod term;
 pub mod value;
 

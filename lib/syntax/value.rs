@@ -34,7 +34,7 @@ pub struct Infinite;
 
 //> VALUE -> IDENTIFIER
 pub struct Identifier<'valid> {
-    pub name: &'valid str
+    pub name: &'valid [u8]
 } 
 
 //> VALUE -> NEST
@@ -49,7 +49,7 @@ pub struct Vector<'valid> {
 
 //> VALUE -> NUMBER
 pub struct Number<'valid> {
-    pub number: &'valid str
+    pub number: &'valid [u8]
 } 
 
 //> VALUE -> ABSOLUTE

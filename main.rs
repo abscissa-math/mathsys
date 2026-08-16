@@ -7,17 +7,17 @@
 #![feature(const_trait_impl)]
 
 //> HEAD -> MODULES
+mod failure;
 mod handler;
-mod interfaceerror;
 
-//> HEAD -> LIBUTILS
-use libutils::systemstd::{
+//> HEAD -> SYSTEMSTD
+use systemstd::{
     System,
     Argument
 };
 
-//> HEAD -> INTERFACEERROR
-use interfaceerror::InterfaceError;
+//> HEAD -> FAILURE
+use failure::Failure;
 
 //> HEAD -> MATHSYS
 use mathsys::Interpreter;
@@ -36,17 +36,17 @@ fn main() -> () {
     let (target, arguments) = match System::arguments() {
         [Argument::Target {to}, arguments @ ..] => (to, arguments),
         [Argument::Path {..}, Argument::Target {to}, arguments @ ..] => (to, arguments),
-        _ => System::critical([InterfaceError::TargetNotProvided])
+        _ => System::critical([Failure::TargetNotProvided])
     };
     System::print(match target.as_str() {
         "latex" => {
             let file = match arguments {
                 [Argument::Path {buffer}] => buffer,
-                _ => System::critical([InterfaceError::IncorrectLatexArguments])
+                _ => System::critical([Failure::IncorrectLatexArguments])
             };
             interpreter.latex(file.to_str().unwrap())
         },
-        name => System::critical([InterfaceError::UnknownTarget {
+        name => System::critical([Failure::UnknownTarget {
             name: name
         }])
     });

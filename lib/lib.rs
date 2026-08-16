@@ -7,11 +7,14 @@
 #![feature(default_field_values)]
 #![feature(const_trait_impl)]
 #![feature(new_range)]
+#![feature(map_try_insert)]
 #![feature(phantom_variance_markers)]
 #![feature(generic_const_exprs)]
+#![feature(non_lifetime_binders)]
+#![feature(never_patterns)]
 
 //> HEAD -> MODULES
-mod failure;
+mod error;
 mod latex;
 mod parser;
 mod runtime;
@@ -23,8 +26,8 @@ use parser::parse;
 //> HEAD -> LATEX
 use latex::LaTeX;
 
-//> HEAD -> FAILURE
-pub use failure::Failure;
+//> HEAD -> ERROR
+pub use error::Error;
 
 //> HEAD -> RUNTIME
 pub use runtime::Runtime;

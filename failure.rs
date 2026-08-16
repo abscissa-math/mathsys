@@ -2,16 +2,16 @@
 //^ HEAD
 //^
 
-//> HEAD -> LIBUTILS
-use libutils::issuing::Issue;
+//> HEAD -> ISSUING
+use issuing::Issue;
 
 
 //>
-//^ INTERFACEERROR
+//^ FAILURE
 //^
 
-//> INTERFACEERROR -> ENUM
-pub enum InterfaceError {
+//> FAILURE -> ENUM
+pub enum Failure {
     UnknownTarget {
         name: &'static str
     },
@@ -19,23 +19,23 @@ pub enum InterfaceError {
     IncorrectLatexArguments
 }
 
-//> INTERFACEERROR -> INTO ISSUE
-impl Into<Issue> for InterfaceError {
+//> FAILURE -> INTO ISSUE
+impl Into<Issue> for Failure {
     fn into(self) -> Issue {return match self {
-        InterfaceError::UnknownTarget {name} => Issue {
+        Failure::UnknownTarget {name} => Issue {
             name: "unknown target",
             description: Some(format!("unknown target found: {name:?}")),
             ..
         },
-        InterfaceError::TargetNotProvided => Issue {
+        Failure::TargetNotProvided => Issue {
             name: "target not provided",
             description: Some(String::from("interpreter target was not provided")),
             ..
         },
-        InterfaceError::IncorrectLatexArguments => Issue {
+        Failure::IncorrectLatexArguments => Issue {
             name: "incorrect arguments for latex",
             description: Some(format!("usage: `mathsys latex (FILE)`")),
             ..
         }
-    }.assert_normal()}
+    }}
 }

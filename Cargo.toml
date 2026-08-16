@@ -28,13 +28,12 @@ strip = true
 debug = false
 
 [dependencies]
-strum = "0.28"
-strum_macros = "0.28"
 enum_dispatch = "0.3"
-typed-arena = "2.0"
 enum-as-inner = "0.7"
 elsa = "1.11"
-libutils = "21.1"
+issuing = "2.0"
+systemstd = "5.1"
+unhygienic2 = "0.1"
 
 [dev-dependencies]
 criterion = "0.8"

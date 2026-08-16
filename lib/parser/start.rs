@@ -5,12 +5,15 @@
 //> HEAD -> SUPER
 use super::{
     state::State,
-    statement::statement
+    statement::statement,
+    keyword::keyword,
+    multiple::multiple,
+    depleted::depleted
 };
 
 //> HEAD -> CRATE
 use crate::{
-    failure::Failure,
+    error::Error,
     syntax::Start
 };
 
@@ -20,19 +23,13 @@ use crate::{
 //^
 
 //> START -> FUNCTION
-pub fn start<'input>(state: &mut State<'input>) -> Result<Start<'input>, Failure<'input>> {
-    let statements = state.optional(|state| {
-        state.skip(b'\n');
-        let first = statement(state)?;
-        let mut rest = state.multiple(|state| {
-            state.skip(b'\n');
-            statement(state)
-        });
-        rest.insert(0, first);
-        Ok(rest)
-    }).unwrap_or_default();
-    state.skip(b'\n');
-    return state.depleted(Start {
+pub fn start<'input>(state: &mut State<'input>) -> Result<Start<'input>, Error<'input>> {
+    let statements = multiple!(state, {
+        if state.position.index != 0 {keyword!(state, [b'\n'])?}
+        statement(state)
+    });
+    depleted!(state)?;
+    return Ok(Start {
         statements: statements
     });
 }

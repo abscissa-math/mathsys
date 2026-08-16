@@ -30,13 +30,13 @@ pub enum Statement<'valid> {
 
 //> STATEMENT -> DEFINITION
 pub struct Definition<'valid> {
-    pub identifier: Identifier<'valid>,
+    pub of: Identifier<'valid>,
     pub expression: Expression<'valid>
 } 
 
 //> STATEMENT -> FUNCTION
 pub struct Function<'valid> {
-    pub identifier: Identifier<'valid>,
+    pub name: Identifier<'valid>,
     pub arguments: Vec<Identifier<'valid>>,
     pub expression: Expression<'valid>
 } 

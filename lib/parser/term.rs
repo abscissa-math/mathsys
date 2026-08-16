@@ -5,12 +5,15 @@
 //> HEAD -> SUPER
 use super::{
     state::State,
-    factor::factor
+    factor::factor,
+    choice::choice,
+    optional::optional,
+    multiple::multiple
 };
 
 //> HEAD -> CRATE
 use crate::{
-    failure::Failure,
+    error::Error,
     syntax::term::Term
 };
 
@@ -20,18 +23,13 @@ use crate::{
 //^
 
 //> TERM -> FUNCTION
-pub fn term<'input>(
-    state: &mut State<'input>
-) -> Result<Term<'input>, Failure<'input>> {
+pub fn term<'input>(state: &mut State<'input>) -> Result<Term<'input>, Error<'input>> {
     let mut numerator = Vec::from([factor(state)?]);
     let mut denominator = Vec::new();
     let mut position = true;
-    for (change, factor) in state.multiple(|state| {
-        let operator = state.optional(|state| {
-            state.advance(|byte| matches!(byte, b'*' | b'/')).map(|symbol| symbol == b'*')
-        });
-        Ok((operator, factor(state)?))
-    }) {
+    for (change, factor) in multiple!(state, {
+        Ok((optional!(state, choice!(state, b'*', b'/')), factor(state)?))
+    }) {        
         if let Some(new) = change {position = new}
         match position {
             false => &mut denominator,

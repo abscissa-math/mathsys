@@ -6,7 +6,11 @@
 use super::{
     state::State,
     expression::expression,
-    value::identifier
+    value::identifier,
+    keyword::keyword,
+    symbol::Symbol,
+    optional::optional,
+    multiple::multiple
 };
 
 //> HEAD -> CRATE
@@ -18,7 +22,7 @@ use crate::{
         Node,
         Equation
     },
-    failure::Failure
+    error::Error
 };
 
 
@@ -29,29 +33,29 @@ use crate::{
 //> STATEMENT -> DISPATCH
 pub fn statement<'input>(
     state: &mut State<'input>
-) -> Result<Statement<'input>, Failure<'input>> {return match state.optional(definition) {
-    None => match state.optional(function) {
-        None => match state.optional(node) {
-            None => match state.optional(equation) {
-                Some(equation) => Ok(Statement::Equation(equation)),
-                None => Err(Failure::CouldntParseStatement)
-            },
-            Some(node) => Ok(Statement::Node(node))
-        },
-        Some(function) => Ok(Statement::Function(function))
-    },
-    Some(definition) => Ok(Statement::Definition(definition))
+) -> Result<Statement<'input>, Error<'input>> {return match optional!(state, definition) {
+    Some(definition) => Ok(Statement::Definition(definition)),
+    _ => match optional!(state, function) {
+        Some(function) => Ok(Statement::Function(function)),
+        _ => match optional!(state, equation) {
+            Some(equation) => Ok(Statement::Equation(equation)),
+            _ => match optional!(state, node) {
+                Some(node) => Ok(Statement::Node(node)),
+                _ => Err(Error::CouldntParseStatement)
+            }
+        }
+    }
 }}
 
 //> STATEMENT -> DEFINITION
 pub fn definition<'input>(
     state: &mut State<'input>
-) -> Result<Definition<'input>, Failure<'input>> {
-    let identifier = identifier(state)?;
-    state.advance(|byte| byte == b':')?;
-    state.advance(|byte| byte == b'=')?;
+) -> Result<Definition<'input>, Error<'input>> {
+    let of = identifier(state)?;
+    state.symbols.try_insert(of.name, Symbol::Variable);
+    keyword!(state, [b' ', b':', b'=', b' '])?;
     return Ok(Definition {
-        identifier: identifier,
+        of: of,
         expression: expression(state)?
     });
 }
@@ -59,23 +63,21 @@ pub fn definition<'input>(
 //> STATEMENT -> FUNCTION
 pub fn function<'input>(
     state: &mut State<'input>
-) -> Result<Function<'input>, Failure<'input>> {
+) -> Result<Function<'input>, Error<'input>> {
     let name = identifier(state)?;
-    state.advance(|byte| byte == b'(')?;
-    let arguments = state.optional(|state| {
-        let first = identifier(state)?;
-        let mut rest = state.multiple(|state| {
-            state.advance(|byte| byte == b',')?;
+    state.symbols.try_insert(name.name, Symbol::Function);
+    keyword!(state, [b'('])?;
+    let arguments = optional!(state, {
+        let mut rest = Vec::from([identifier(state)?]);
+        rest.extend(multiple!(state, {
+            keyword!(state, [b',', b' '])?;
             identifier(state)
-        });
-        rest.insert(0, first);
+        }));
         Ok(rest)
     }).unwrap_or_default();
-    state.advance(|byte| byte == b')')?;
-    state.advance(|byte| byte == b':')?;
-    state.advance(|byte| byte == b'=')?;
+    keyword!(state, [b')', b' ', b':', b'=', b' '])?;
     return Ok(Function {
-        identifier: name,
+        name: name,
         arguments: arguments,
         expression: expression(state)?
     })
@@ -84,18 +86,16 @@ pub fn function<'input>(
 //> STATEMENT -> NODE
 pub fn node<'input>(
     state: &mut State<'input>
-) -> Result<Node<'input>, Failure<'input>> {
-    return Ok(Node {
-        expression: expression(state)?
-    });
-}
+) -> Result<Node<'input>, Error<'input>> {return Ok(Node {
+    expression: expression(state)?
+})}
 
 //> STATEMENT -> EQUATION
 pub fn equation<'input>(
     state: &mut State<'input>
-) -> Result<Equation<'input>, Failure<'input>> {
+) -> Result<Equation<'input>, Error<'input>> {
     let left = expression(state)?;
-    state.advance(|byte| byte == b'=')?;
+    keyword!(state, [b' ', b'=', b' '])?;
     return Ok(Equation {
         expressions: [left, expression(state)?]
     });

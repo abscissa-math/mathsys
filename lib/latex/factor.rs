@@ -3,10 +3,7 @@
 //^
 
 //> HEAD -> CRATE
-use crate::syntax::factor::{
-    Raised,
-    Limit
-};
+use crate::syntax::factor::Factor;
 
 //> HEAD -> SUPER
 use super::LaTeX;
@@ -16,30 +13,11 @@ use super::LaTeX;
 //^ FACTOR
 //^
 
-//> FACTOR -> RAISED
-impl<'valid> LaTeX for Raised<'valid> {
+//> FACTOR -> IMPLEMENTATION
+impl<'valid> LaTeX for Factor<'valid> {
     fn render(&self) -> String {return format!(
         "{}{}", 
         self.value.render(), 
-        self.exponent.as_ref().map(|exponent| format!(
-            "^{{{}}}", 
-            exponent.render()
-        )).unwrap_or_default()
-    )}
-}
-
-//> FACTOR -> LIMIT
-impl<'valid> LaTeX for Limit<'valid> {
-    fn render(&self) -> String {return format!(
-        "\\lim_{{{}\\to {}{}}}{}{}",
-        self.identifier.render(),
-        self.expression.render(),
-        match self.direction {
-            None => '\0',
-            Some(false) => '-',
-            Some(true) => '+'
-        },
-        self.nest.render(),
         self.exponent.as_ref().map(|exponent| format!(
             "^{{{}}}", 
             exponent.render()

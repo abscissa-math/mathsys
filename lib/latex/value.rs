@@ -29,7 +29,7 @@ impl LaTeX for Infinite {
 
 //> VALUE -> IDENTIFIER
 impl<'valid> LaTeX for Identifier<'valid> {
-    fn render(&self) -> String {return self.name.to_string()}
+    fn render(&self) -> String {return self.name.render()}
 }
 
 //> VALUE -> NEST
@@ -53,7 +53,7 @@ impl<'valid> LaTeX for Vector<'valid> {
 
 //> VALUE -> NUMBER
 impl<'valid> LaTeX for Number<'valid> {
-    fn render(&self) -> String {return self.number.to_string()}
+    fn render(&self) -> String {return str::from_utf8(self.number).unwrap().to_string()}
 }
 
 //> VALUE -> ABSOLUTE
