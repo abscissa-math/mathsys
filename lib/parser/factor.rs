@@ -27,10 +27,10 @@ pub fn factor<'input>(
     step: &mut Step<'input>
 ) -> Result<Factor<'input>, Error<'input>> {return Ok(Factor {
     value: value(step)?,
-    exponent: optional!(step, {
+    exponent: optional!({
         keyword!(step, [b'^'])?;
         let expression = expression(step)?;
         keyword!(step, [b'^'])?;
         Ok(expression)
-    })
+    }, step)
 })}

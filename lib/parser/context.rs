@@ -17,7 +17,7 @@ use crate::Error;
 //^
 
 //> CONTEXT -> STRUCT
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Context<'valid> {
     symbols: Map<&'valid [u8], Symbol>
 }

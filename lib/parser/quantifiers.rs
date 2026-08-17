@@ -11,15 +11,9 @@ macro_rules! optional {
         if result.is_err() {$step.state = state};
         result
     }};
-    //($step:ident, @$call:ident) => {{
-    //    let state = $step.state.clone();
-    //    let result = $call($step);
-    //    if result.is_err() {$step.state = state};
-    //    result
-    //}};
-    ($step:ident, $call:ident) => {{
+    ($call:ident, $step:ident $(, $argument:expr)*) => {{
         let state = $step.state.clone();
-        match $call($step) {
+        match $call($step, $(, $argument)*) {
             Ok(value) => Some(value),
             Err(_) => {
                 $step.state = state;
@@ -27,33 +21,33 @@ macro_rules! optional {
             }
         }
     }};
-    ($step:ident, @$closure:expr) => {{
+    (@$closure:expr, $step:ident $(, $argument:expr)*) => {{
         let closure = $crate::parser::coerce::coerce(
             |step| unhygienic2::unhygienic! {$closure}
         );
-        $crate::parser::quantifiers::optional!($step, @closure)
+        $crate::parser::quantifiers::optional!(@closure, $step $(, $argument)*)
     }};
-    ($step:ident, $closure:expr) => {{
+    ($closure:expr, $step:ident $(, $argument:expr)*) => {{
         let closure = $crate::parser::coerce::coerce(
             |step| unhygienic2::unhygienic! {$closure}
         );
-        $crate::parser::quantifiers::optional!($step, closure)
+        $crate::parser::quantifiers::optional!(closure, $step $(, $argument)*)
     }}
 }
 
 //> QUANTIFIERS -> MULTIPLE
 #[macro_export]
 macro_rules! multiple {
-    ($step:ident, $call:expr) => {{
+    ($call:expr, $step:ident $(, $argument:expr)*) => {{
         let mut items = Vec::new();
-        loop {match $crate::parser::quantifiers::optional!($step, $call) {
+        loop {match $crate::parser::quantifiers::optional!($call, $step $(, $argument)*) {
             Some(value) => items.push(value),
             None => break items
         }}
     }};
-    ($step:ident, @$call:expr) => {{
+    (@$call:expr, $step:ident $(, $argument:expr)*) => {{
         let mut items = Vec::new();
-        loop {match $crate::parser::quantifiers::optional!($step, @$call) {
+        loop {match $crate::parser::quantifiers::optional!(@$call, $step $(, $argument)*) {
             Ok(value) => items.push(value),
             Err(error) => break (items, error)
         }}
@@ -63,20 +57,20 @@ macro_rules! multiple {
 //> QUANTIFIERS -> MORE
 #[macro_export]
 macro_rules! more {
-    ($step:ident, $call:expr) => {{
-        let items = $crate::parser::quantifiers::multiple!($step, $call);
+    ($call:expr, $step:ident $(, $argument:expr)*) => {{
+        let items = $crate::parser::quantifiers::multiple!($call, $step $(, $argument)*);
         match items.len() {
             1.. => Ok(items),
             0 => Err($crate::error::Error::CouldntParseMore)
         }
     }};
-    ($step:ident, @$call:expr) => {{
-        let items = $crate::parser::quantifiers::multiple!($step, @$call);
+    (@$call:expr, $step:ident $(, $argument:expr)*) => {{
+        let items = $crate::parser::quantifiers::multiple!(@$call, $step $(, $argument)*);
         match items.0.len() {
             1.. => Ok(items),
             0 => Err($crate::error::Error::CouldntParseMore)
         }
-    }};
+    }}
 }
 
 //> QUANTIFIERS -> EXPORTS

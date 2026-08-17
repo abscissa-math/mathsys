@@ -29,9 +29,9 @@ pub fn term<'input>(step: &mut Step<'input>) -> Result<Term<'input>, Error<'inpu
     let mut numerator = Vec::from([factor(step)?]);
     let mut denominator = Vec::new();
     let mut position = true;
-    for (change, factor) in multiple!(step, {
-        Ok((optional!(step, choice!(step, b'*', b'/')), factor(step)?))
-    }) {        
+    for (change, factor) in multiple!({
+        Ok((optional!(choice!(step, b'*', b'/'), step), factor(step)?))
+    }, step) {        
         if let Some(new) = change {position = new}
         match position {
             false => &mut denominator,

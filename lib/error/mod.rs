@@ -72,7 +72,7 @@ impl<'valid> Into<Issue> for Error<'valid> {
             ..
         },
         Error::OtherIdentifierSymbolExpected => Issue {
-            name: "other",
+            name: "unmatched symbol",
             ..
         },
         Error::ParsingStatement {definition, function, node, equation} => Issue {

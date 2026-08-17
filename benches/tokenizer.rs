@@ -4,7 +4,6 @@
 
 //> HEAD -> FEATURES
 #![feature(const_trait_impl)]
-#![feature(const_cmp)]
 
 //> HEAD -> CRITERION
 use criterion::{
@@ -40,14 +39,13 @@ criterion_main!(tokenizer);
 fn benches(criterion: &mut Criterion) -> () {
     let mut group = criterion.benchmark_group("tokenizer");
     group.throughput(Throughput::Bytes(include_bytes!("../data/root.msm").len() as u64));
-    struct Handler; const impl<'valid> Runtime<'valid> for Handler {
-        fn critical(_error: Error<'valid>) -> ! {panic!()}
+    struct Handler; impl<'valid> Runtime<'valid> for Handler {
         fn resolve(&'valid self, module: &'valid str) -> &'valid [u8] {return match module {
             "data/root.msm" => include_bytes!("../data/root.msm"),
             _ => unsafe {unreachable_unchecked()}
         }}
-        fn error(_error: Error<'valid>) -> () {}
         fn warning(_error: Error<'valid>) -> () {}
+        fn failure(_error: Error<'valid>) -> ! {panic!()}
     }
     let interpreter = Interpreter::from(Handler);
     group.bench_function("full", |bencher| bencher.iter(|| {

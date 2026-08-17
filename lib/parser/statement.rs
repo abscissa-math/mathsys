@@ -35,13 +35,13 @@ use crate::{
 //> STATEMENT -> DISPATCH
 pub fn statement<'input>(
     step: &mut Step<'input>
-) -> Result<Statement<'input>, Error<'input>> {return match optional!(step, @definition) {
+) -> Result<Statement<'input>, Error<'input>> {return match optional!(@definition, step) {
     Ok(definition) => Ok(Statement::Definition(definition)),
-    Err(definition) => match optional!(step, @function) {
+    Err(definition) => match optional!(@function, step) {
         Ok(function) => Ok(Statement::Function(function)),
-        Err(function) => match optional!(step, @equation) {
+        Err(function) => match optional!(@equation, step) {
             Ok(equation) => Ok(Statement::Equation(equation)),
-            Err(equation) => match optional!(step, @node) {
+            Err(equation) => match optional!(@node, step) {
                 Ok(node) => Ok(Statement::Node(node)),
                 Err(node) => Err(Error::ParsingStatement {
                     definition: Box::new(definition),
@@ -59,7 +59,6 @@ pub fn definition<'input>(
     step: &mut Step<'input>
 ) -> Result<Definition<'input>, Error<'input>> {
     let identifier = identifier(step, Symbol::Variable, true)?;
-    step.state.declare(&identifier, Symbol::Variable)?;
     keyword!(step, [b' ', b':', b'=', b' '])?;
     return Ok(Definition {
         identifier: identifier,
@@ -72,16 +71,15 @@ pub fn function<'input>(
     step: &mut Step<'input>
 ) -> Result<Function<'input>, Error<'input>> {
     let name = identifier(step, Symbol::Function, true)?;
-    step.state.declare(&name, Symbol::Function)?;
     keyword!(step, [b'('])?;
-    let arguments = optional!(step, {
+    let arguments = optional!({
         let mut rest = Vec::from([identifier(step, Symbol::Variable, true)?]);
-        rest.extend(multiple!(step, {
+        rest.extend(multiple!({
             keyword!(step, [b',', b' '])?;
-            identifier(step)
-        }));
+            identifier(step, Symbol::Variable, true)
+        }, step));
         Ok(rest)
-    }).unwrap_or_default();
+    }, step).unwrap_or_default();
     keyword!(step, [b')', b' ', b':', b'=', b' '])?;
     return Ok(Function {
         identifier: name,

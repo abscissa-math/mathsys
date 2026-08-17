@@ -40,21 +40,26 @@ use crate::{
 
 //> VALUE -> DISPATCH
 pub fn value<'input>(step: &mut Step<'input>) -> Result<Value<'input>, Error<'input>> {
-    return match optional!(step, @infinite) {
+    return match optional!(@infinite, step) {
         Ok(infinite) => Ok(Value::Infinite(infinite)),
-        Err(infinite) => match optional!(step, @call) {
+        Err(infinite) => match optional!(@call, step) {
             Ok(call) => Ok(Value::Call(call)),
-            Err(call) => match optional!(step, @nest) {
+            Err(call) => match optional!(@nest, step) {
                 Ok(nest) => Ok(Value::Nest(nest)),
-                Err(nest) => match optional!(step, @vector) {
+                Err(nest) => match optional!(@vector, step) {
                     Ok(vector) => Ok(Value::Vector(vector)),
-                    Err(vector) => match optional!(step, @number) {
+                    Err(vector) => match optional!(@number, step) {
                         Ok(number) => Ok(Value::Number(number)),
-                        Err(number) => match optional!(step, @absolute) {
+                        Err(number) => match optional!(@absolute, step) {
                             Ok(absolute) => Ok(Value::Absolute(absolute)),
-                            Err(absolute) => match optional!(step, @undefined) {
+                            Err(absolute) => match optional!(@undefined, step) {
                                 Ok(undefined) => Ok(Value::Undefined(undefined)),
-                                Err(undefined) => match optional!(step, @identifier) {
+                                Err(undefined) => match optional!(
+                                    @identifier, 
+                                    step, 
+                                    Symbol::Variable, 
+                                    false
+                                ) {
                                     Ok(identifier) => Ok(Value::Identifier(identifier)),
                                     Err(identifier) => Err(Error::ParsingValue {
                                         infinite: Box::new(infinite), 
@@ -106,7 +111,7 @@ pub fn identifier<'input>(
 //> VALUE -> NEST
 pub fn nest<'input>(step: &mut Step<'input>) -> Result<Nest<'input>, Error<'input>> {
     keyword!(step, [b'('])?;
-    let inside = optional!(step, expression);
+    let inside = optional!(expression, step);
     keyword!(step, [b')'])?;
     return Ok(Nest {
         inside: inside
@@ -116,14 +121,14 @@ pub fn nest<'input>(step: &mut Step<'input>) -> Result<Nest<'input>, Error<'inpu
 //> VALUE -> VECTOR
 pub fn vector<'input>(step: &mut Step<'input>) -> Result<Vector<'input>, Error<'input>> {
     keyword!(step, [b'['])?;
-    let expressions = optional!(step, {
+    let expressions = optional!({
         let mut rest = Vec::from([expression(step)?]);
-        rest.extend(multiple!(step, {
+        rest.extend(multiple!({
             keyword!(step, [b',', b' '])?;
             expression(step)
-        }));
+        }, step));
         Ok(rest)
-    }).unwrap_or_default();
+    }, step).unwrap_or_default();
     keyword!(step, [b']'])?;
     return Ok(Vector {
         expressions: expressions
@@ -159,15 +164,15 @@ pub fn undefined<'input>(step: &mut Step<'input>) -> Result<Undefined, Error<'in
 pub fn call<'input>(step: &mut Step<'input>) -> Result<Call<'input>, Error<'input>> {
     let identifier = identifier(step, Symbol::Function, false)?;
     keyword!(step, [b'('])?;
-    let with = optional!(step, {
+    let with = optional!({
         let first = expression(step)?;
-        let mut rest = multiple!(step, {
+        let mut rest = multiple!({
             keyword!(step, [b',', b' '])?;
             expression(step)
-        });
+        }, step);
         rest.insert(0, first);
         Ok(rest)
-    }).unwrap_or_default();
+    }, step).unwrap_or_default();
     keyword!(step, [b')'])?;
     return Ok(Call {
         identifier: identifier,

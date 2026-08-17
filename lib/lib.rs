@@ -7,7 +7,6 @@
 #![feature(default_field_values)]
 #![feature(const_trait_impl)]
 #![feature(new_range)]
-#![feature(map_try_insert)]
 #![feature(phantom_variance_markers)]
 #![feature(generic_const_exprs)]
 #![feature(non_lifetime_binders)]
