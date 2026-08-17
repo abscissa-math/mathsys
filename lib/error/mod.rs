@@ -11,6 +11,9 @@ use issuing::{
 //> HEAD -> ENUM_AS_INNER
 use enum_as_inner::EnumAsInner;
 
+//> HEAD -> CRATE
+use crate::parser::symbol::Symbol;
+
 
 //^
 //^ ERROR
@@ -28,7 +31,10 @@ pub enum Error<'valid> {
         exceptions: &'static str,
         found: &'valid [u8]
     },
-    OtherIdentifierSymbolExpected,
+    OtherIdentifierSymbolExpected {
+        name: &'valid [u8],
+        expected: Symbol
+    },
     ParsingStatement {
         definition: Box<Error<'valid>>,
         function: Box<Error<'valid>>,
@@ -45,7 +51,9 @@ pub enum Error<'valid> {
         undefined: Box<Error<'valid>>,
         call: Box<Error<'valid>>
     },
-    TokenStreamDepleted,
+    TokenStreamDepleted {
+        expected: &'static str
+    },
     CouldntParseMore
 }
 
@@ -53,7 +61,7 @@ pub enum Error<'valid> {
 impl<'valid> Into<Issue> for Error<'valid> {
     fn into(self) -> Issue {return match self {
         Error::ScanMismatch {expected, encountered} => Issue {
-            name: "failed to parse input",
+            name: "mismatched input",
             description: Some(format!(
                 "expected {expected} but found b{:?}", 
                 unsafe {char::from_u32_unchecked(*encountered as u32)}
@@ -64,23 +72,54 @@ impl<'valid> Into<Issue> for Error<'valid> {
             ..
         },
         Error::HookExceptionFound {pattern, exceptions, found} => Issue {
-            name: "failed to hook into the document",
-            description: Some(format!("hit an exception of {exceptions}")),
+            name: "exception found whilst parsing input",
+            description: Some(format!(
+                "cannot parse the exception b{:?}",
+                unsafe {str::from_utf8_unchecked(found)}
+            )),
             sections: Vec::from([
-                Section::Help(format!("write a sequence of {pattern} not in {exceptions}"))
+                Section::Help(format!("the sequence must not be {exceptions}")),
+                Section::Note(format!("write the sequence with {pattern}"))
             ]),
             ..
         },
-        Error::OtherIdentifierSymbolExpected => Issue {
-            name: "unmatched symbol",
+        Error::OtherIdentifierSymbolExpected {name, expected} => Issue {
+            name: "unmatched identifier symbol",
+            description: Some(format!(
+                "expected b{:?} to be a {expected:?}",
+                unsafe {str::from_utf8_unchecked(name)}
+            )),
+            sections: Vec::from([
+                Section::Help(format!(
+                    "you might want to define b{:?} as a {expected:?}:",
+                    unsafe {str::from_utf8_unchecked(name)}
+                )),
+                Section::Code {
+                    code: format!(
+                        "{}{} := //..//",
+                        unsafe {str::from_utf8_unchecked(name)},
+                        match expected {
+                            Symbol::Function => "(//..//)",
+                            Symbol::Variable => ""
+                        }
+                    ),
+                    ..
+                }
+            ]),
             ..
         },
         Error::ParsingStatement {definition, function, node, equation} => Issue {
             name: "failed to parse statement",
+            description: Some(format!("failed to parse any statement construct")),
             sections: Vec::from([
+                Section::Note(String::from("attempted to parse the following constructs")),
+                Section::Help(format!("for parsing a definition:")),
                 Section::Child((*definition).into()),
+                Section::Help(format!("for parsing a function:")),
                 Section::Child((*function).into()),
+                Section::Help(format!("for parsing a node:")),
                 Section::Child((*node).into()),
+                Section::Help(format!("for parsing an equation:")),
                 Section::Child((*equation).into())
             ]),
             ..
@@ -96,20 +135,34 @@ impl<'valid> Into<Issue> for Error<'valid> {
             call
         } => Issue {
             name: "failed to parse value",
+            description: Some(format!("failed to parse any value construct")),
             sections: Vec::from([
+                Section::Note(String::from("attempted to parse the following constructs")),
+                Section::Help(format!("for parsing an infinite:")),
                 Section::Child((*infinite).into()),
+                Section::Help(format!("for parsing an identifier:")),
                 Section::Child((*identifier).into()),
+                Section::Help(format!("for parsing a nest:")),
                 Section::Child((*nest).into()),
+                Section::Help(format!("for parsing a vector:")),
                 Section::Child((*vector).into()),
+                Section::Help(format!("for parsing a number:")),
                 Section::Child((*number).into()),
+                Section::Help(format!("for parsing an absolute:")),
                 Section::Child((*absolute).into()),
+                Section::Help(format!("for parsing an undefined:")),
                 Section::Child((*undefined).into()),
+                Section::Help(format!("for parsing a call:")),
                 Section::Child((*call).into())
             ]),
             ..
         },
-        Error::TokenStreamDepleted => Issue {
-            name: "token stream depleted",
+        Error::TokenStreamDepleted {expected} => Issue {
+            name: "unexpected end of file",
+            description: Some(format!("unexpectedly encountered the end of file")),
+            sections: Vec::from([
+                Section::Note(format!("expected {expected} instead"))
+            ]),
             ..
         },
         Error::CouldntParseMore => Issue {

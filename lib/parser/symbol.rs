@@ -11,7 +11,7 @@ use enum_as_inner::EnumAsInner;
 //^
 
 //> SYMBOL -> ENUM
-#[derive(Clone, EnumAsInner, PartialEq, Eq)]
+#[derive(Clone, EnumAsInner, PartialEq, Eq, Debug)]
 pub enum Symbol {
     Variable,
     Function

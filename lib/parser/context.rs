@@ -31,8 +31,11 @@ impl<'valid> Context<'valid> {
         &self, 
         name: &'valid [u8], 
         symbol: Symbol
-    ) -> Result<(), Error<'static>> {return match self.symbols.get(name) == Some(&symbol) {
+    ) -> Result<(), Error<'valid>> {return match self.symbols.get(name) == Some(&symbol) {
         true => Ok(()),
-        false => Err(Error::OtherIdentifierSymbolExpected)
+        false => Err(Error::OtherIdentifierSymbolExpected {
+            name: name,
+            expected: symbol
+        })
     }}
 }

@@ -18,7 +18,9 @@ macro_rules! keyword {
                 expected: stringify!(b'\n'),
                 encountered: other
             }),
-            None => Err($crate::error::Error::TokenStreamDepleted)
+            None => Err($crate::error::Error::TokenStreamDepleted {
+                expected: stringify!(b'\n')
+            })
         }
     };
     ($step:ident, [$current:literal $(, $rest:literal)*]) => {
@@ -32,7 +34,9 @@ macro_rules! keyword {
                 expected: stringify!($current),
                 encountered: other
             }),
-            None => Err($crate::error::Error::TokenStreamDepleted)
+            None => Err($crate::error::Error::TokenStreamDepleted {
+                expected: stringify!($current)
+            })
         }
     }
 }
@@ -56,7 +60,9 @@ macro_rules! choice {
                 expected: stringify!($first | $second),
                 encountered: other
             }),
-            None => Err($crate::error::Error::TokenStreamDepleted)
+            None => Err($crate::error::Error::TokenStreamDepleted {
+                expected: stringify!($first | $second)
+            })
         }
     };
 }
