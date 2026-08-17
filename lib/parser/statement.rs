@@ -12,7 +12,8 @@ use super::{
         optional,
         multiple
     },
-    symbol::Symbol
+    symbol::Symbol,
+    scope::scope
 };
 
 //> HEAD -> CRATE
@@ -72,19 +73,23 @@ pub fn function<'input>(
 ) -> Result<Function<'input>, Error<'input>> {
     let name = identifier(step, Symbol::Function, true)?;
     keyword!(step, [b'('])?;
-    let arguments = optional!({
-        let mut rest = Vec::from([identifier(step, Symbol::Variable, true)?]);
-        rest.extend(multiple!({
-            keyword!(step, [b',', b' '])?;
-            identifier(step, Symbol::Variable, true)
-        }, step));
-        Ok(rest)
-    }, step).unwrap_or_default();
-    keyword!(step, [b')', b' ', b':', b'=', b' '])?;
+    scope!(
+        step,
+        let arguments = optional!({
+            let mut rest = Vec::from([identifier(step, Symbol::Variable, true)?]);
+            rest.extend(multiple!({
+                keyword!(step, [b',', b' '])?;
+                identifier(step, Symbol::Variable, true)
+            }, step));
+            Ok(rest)
+        }, step).unwrap_or_default();
+        keyword!(step, [b')', b' ', b':', b'=', b' '])?;
+        let expression = expression(step)?;
+    );
     return Ok(Function {
         identifier: name,
         arguments: arguments,
-        expression: expression(step)?
+        expression: expression
     })
 }
 

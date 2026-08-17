@@ -7,8 +7,7 @@ use super::{
     step::Step,
     statement::statement,
     consumers::keyword,
-    quantifiers::multiple,
-    depleted::depleted
+    quantifiers::multiple
 };
 
 //> HEAD -> CRATE
@@ -28,7 +27,7 @@ pub fn start<'input>(step: &mut Step<'input>) -> Result<Start<'input>, Error<'in
         if step.state.position.index != 0 {keyword!(step, [b'\n'])?}
         statement(step)
     }, step);
-    depleted!(step, error)?;
+    step.depleted(error)?;
     return Ok(Start {
         statements: statements
     });

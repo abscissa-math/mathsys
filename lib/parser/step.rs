@@ -5,6 +5,9 @@
 //> HEAD -> SUPER
 use super::state::State;
 
+//> HEAD -> CRATE
+use crate::error::Error;
+
 
 //^
 //^ STEP
@@ -14,6 +17,13 @@ use super::state::State;
 pub struct Step<'valid> {
     pub input: &'valid [u8],
     pub state: State<'valid>
+}
+
+//> STEP -> IMPLEMENTATION
+impl<'valid> Step<'valid> {
+    pub fn depleted(&self, error: Error<'valid>) -> Result<(), Error<'valid>> {
+        return if self.input.len() == self.state.position.index {Ok(())} else {Err(error)};
+    }
 }
 
 //> STEP -> FROM TOKENS

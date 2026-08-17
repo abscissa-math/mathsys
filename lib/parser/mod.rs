@@ -6,11 +6,11 @@
 pub mod coerce;
 pub mod consumers;
 pub mod context;
-pub mod depleted;
 pub mod expression;
 pub mod factor;
 pub mod position;
 pub mod quantifiers;
+pub mod scope;
 pub mod start;
 pub mod state;
 pub mod statement;
