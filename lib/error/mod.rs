@@ -3,7 +3,10 @@
 //^
 
 //> HEAD -> ISSUING
-use issuing::Issue;
+use issuing::{
+    Issue,
+    Section
+};
 
 //> HEAD -> ENUM_AS_INNER
 use enum_as_inner::EnumAsInner;
@@ -16,48 +19,93 @@ use enum_as_inner::EnumAsInner;
 //> ERROR -> ENUM
 #[derive(EnumAsInner)]
 pub enum Error<'valid> {
-    InputParseFailed {
+    ScanMismatch {
         expected: &'static str,
         encountered: &'valid u8
     },
-    HookException {
+    HookExceptionFound {
         pattern: &'static str,
         exceptions: &'static str,
         found: &'valid [u8]
     },
-    CouldntParseStatement,
-    CouldntParseFactor,
-    CouldntParseValue,
+    OtherIdentifierSymbolExpected,
+    ParsingStatement {
+        definition: Box<Error<'valid>>,
+        function: Box<Error<'valid>>,
+        node: Box<Error<'valid>>,
+        equation: Box<Error<'valid>>
+    },
+    ParsingValue {
+        infinite: Box<Error<'valid>>,
+        identifier: Box<Error<'valid>>,
+        nest: Box<Error<'valid>>,
+        vector: Box<Error<'valid>>,
+        number: Box<Error<'valid>>,
+        absolute: Box<Error<'valid>>,
+        undefined: Box<Error<'valid>>,
+        call: Box<Error<'valid>>
+    },
     TokenStreamDepleted,
-    CouldntParseMore,
-    UnfinishedInputParse
+    CouldntParseMore
 }
 
 //> ERROR -> INTO ISSUE
 impl<'valid> Into<Issue> for Error<'valid> {
     fn into(self) -> Issue {return match self {
-        Error::InputParseFailed {expected, encountered} => Issue {
+        Error::ScanMismatch {expected, encountered} => Issue {
             name: "failed to parse input",
-            description: Some(format!("expected {expected} but found {encountered}")),
-            help: Some(format!("write one of {expected} instead")),
+            description: Some(format!(
+                "expected {expected} but found b{:?}", 
+                unsafe {char::from_u32_unchecked(*encountered as u32)}
+            )),
+            sections: Vec::from([
+                Section::Help(format!("write {expected} instead"))
+            ]),
             ..
         },
-        Error::HookException {pattern, exceptions, found} => Issue {
+        Error::HookExceptionFound {pattern, exceptions, found} => Issue {
             name: "failed to hook into the document",
             description: Some(format!("hit an exception of {exceptions}")),
-            help: Some(format!("write a sequence of {pattern} not in {exceptions}")),
+            sections: Vec::from([
+                Section::Help(format!("write a sequence of {pattern} not in {exceptions}"))
+            ]),
             ..
         },
-        Error::CouldntParseStatement => Issue {
+        Error::OtherIdentifierSymbolExpected => Issue {
+            name: "other",
+            ..
+        },
+        Error::ParsingStatement {definition, function, node, equation} => Issue {
             name: "failed to parse statement",
+            sections: Vec::from([
+                Section::Child((*definition).into()),
+                Section::Child((*function).into()),
+                Section::Child((*node).into()),
+                Section::Child((*equation).into())
+            ]),
             ..
         },
-        Error::CouldntParseFactor => Issue {
-            name: "failed to parse factor",
-            ..
-        },
-        Error::CouldntParseValue => Issue {
+        Error::ParsingValue {
+            infinite, 
+            identifier, 
+            nest, 
+            vector, 
+            number, 
+            absolute, 
+            undefined, 
+            call
+        } => Issue {
             name: "failed to parse value",
+            sections: Vec::from([
+                Section::Child((*infinite).into()),
+                Section::Child((*identifier).into()),
+                Section::Child((*nest).into()),
+                Section::Child((*vector).into()),
+                Section::Child((*number).into()),
+                Section::Child((*absolute).into()),
+                Section::Child((*undefined).into()),
+                Section::Child((*call).into())
+            ]),
             ..
         },
         Error::TokenStreamDepleted => Issue {
@@ -66,10 +114,6 @@ impl<'valid> Into<Issue> for Error<'valid> {
         },
         Error::CouldntParseMore => Issue {
             name: "failed to parse more",
-            ..
-        },
-        Error::UnfinishedInputParse => Issue {
-            name: "failed to parse whole input",
             ..
         }
     }}

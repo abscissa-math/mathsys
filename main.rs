@@ -5,10 +5,12 @@
 //> HEAD -> FEATURES
 #![feature(default_field_values)]
 #![feature(const_trait_impl)]
+#![feature(never_type)]
 
 //> HEAD -> MODULES
-mod failure;
+mod error;
 mod handler;
+mod severities;
 
 //> HEAD -> SYSTEMSTD
 use systemstd::{
@@ -16,14 +18,17 @@ use systemstd::{
     Argument
 };
 
-//> HEAD -> FAILURE
-use failure::Failure;
+//> HEAD -> ERROR
+use error::Error;
 
 //> HEAD -> MATHSYS
 use mathsys::Interpreter;
 
 //> HEAD -> HANDLER
 use handler::Handler;
+
+//> HEAD -> SEVERITIES
+use severities::Process;
 
 
 //^
@@ -36,18 +41,17 @@ fn main() -> () {
     let (target, arguments) = match System::arguments() {
         [Argument::Target {to}, arguments @ ..] => (to, arguments),
         [Argument::Path {..}, Argument::Target {to}, arguments @ ..] => (to, arguments),
-        _ => System::critical([Failure::TargetNotProvided])
+        _ => System::error::<Process>(Error::NoTargetProvided)
     };
-    System::print(match target.as_str() {
+    match target.as_str() {
         "latex" => {
-            let file = match arguments {
+            System::print(&interpreter.latex(match arguments {
                 [Argument::Path {buffer}] => buffer,
-                _ => System::critical([Failure::IncorrectLatexArguments])
-            };
-            interpreter.latex(file.to_str().unwrap())
+                _ => System::error::<Process>(Error::IncorrectLatexArguments)
+            }.to_str().unwrap()), false);
         },
-        name => System::critical([Failure::UnknownTarget {
+        name => System::error::<Process>(Error::UnknownTarget {
             name: name
-        }])
-    });
+        })
+    };
 }

@@ -4,10 +4,10 @@
 
 //> HEAD -> SUPER
 use super::{
-    state::State,
+    step::Step,
     value::value,
-    keyword::keyword,
-    optional::optional
+    consumers::keyword,
+    quantifiers::optional
 };
 
 //> HEAD -> CRATE
@@ -24,13 +24,13 @@ use crate::{
 
 //> FACTOR -> FUNCTION
 pub fn factor<'input>(
-    state: &mut State<'input>
+    step: &mut Step<'input>
 ) -> Result<Factor<'input>, Error<'input>> {return Ok(Factor {
-    value: value(state)?,
-    exponent: optional!(state, {
-        keyword!(state, [b'^'])?;
-        let expression = expression(state)?;
-        keyword!(state, [b'^'])?;
+    value: value(step)?,
+    exponent: optional!(step, {
+        keyword!(step, [b'^'])?;
+        let expression = expression(step)?;
+        keyword!(step, [b'^'])?;
         Ok(expression)
     })
 })}

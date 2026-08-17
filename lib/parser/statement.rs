@@ -4,13 +4,15 @@
 
 //> HEAD -> SUPER
 use super::{
-    state::State,
+    step::Step,
     expression::expression,
     value::identifier,
-    keyword::keyword,
-    symbol::Symbol,
-    optional::optional,
-    multiple::multiple
+    consumers::keyword,
+    quantifiers::{
+        optional,
+        multiple
+    },
+    symbol::Symbol
 };
 
 //> HEAD -> CRATE
@@ -32,16 +34,21 @@ use crate::{
 
 //> STATEMENT -> DISPATCH
 pub fn statement<'input>(
-    state: &mut State<'input>
-) -> Result<Statement<'input>, Error<'input>> {return match optional!(state, definition) {
-    Some(definition) => Ok(Statement::Definition(definition)),
-    _ => match optional!(state, function) {
-        Some(function) => Ok(Statement::Function(function)),
-        _ => match optional!(state, equation) {
-            Some(equation) => Ok(Statement::Equation(equation)),
-            _ => match optional!(state, node) {
-                Some(node) => Ok(Statement::Node(node)),
-                _ => Err(Error::CouldntParseStatement)
+    step: &mut Step<'input>
+) -> Result<Statement<'input>, Error<'input>> {return match optional!(step, @definition) {
+    Ok(definition) => Ok(Statement::Definition(definition)),
+    Err(definition) => match optional!(step, @function) {
+        Ok(function) => Ok(Statement::Function(function)),
+        Err(function) => match optional!(step, @equation) {
+            Ok(equation) => Ok(Statement::Equation(equation)),
+            Err(equation) => match optional!(step, @node) {
+                Ok(node) => Ok(Statement::Node(node)),
+                Err(node) => Err(Error::ParsingStatement {
+                    definition: Box::new(definition),
+                    function: Box::new(function),
+                    node: Box::new(node),
+                    equation: Box::new(equation)
+                })
             }
         }
     }
@@ -49,54 +56,54 @@ pub fn statement<'input>(
 
 //> STATEMENT -> DEFINITION
 pub fn definition<'input>(
-    state: &mut State<'input>
+    step: &mut Step<'input>
 ) -> Result<Definition<'input>, Error<'input>> {
-    let of = identifier(state)?;
-    state.symbols.try_insert(of.name, Symbol::Variable);
-    keyword!(state, [b' ', b':', b'=', b' '])?;
+    let identifier = identifier(step, Symbol::Variable, true)?;
+    step.state.declare(&identifier, Symbol::Variable)?;
+    keyword!(step, [b' ', b':', b'=', b' '])?;
     return Ok(Definition {
-        of: of,
-        expression: expression(state)?
+        identifier: identifier,
+        expression: expression(step)?
     });
 }
 
 //> STATEMENT -> FUNCTION
 pub fn function<'input>(
-    state: &mut State<'input>
+    step: &mut Step<'input>
 ) -> Result<Function<'input>, Error<'input>> {
-    let name = identifier(state)?;
-    state.symbols.try_insert(name.name, Symbol::Function);
-    keyword!(state, [b'('])?;
-    let arguments = optional!(state, {
-        let mut rest = Vec::from([identifier(state)?]);
-        rest.extend(multiple!(state, {
-            keyword!(state, [b',', b' '])?;
-            identifier(state)
+    let name = identifier(step, Symbol::Function, true)?;
+    step.state.declare(&name, Symbol::Function)?;
+    keyword!(step, [b'('])?;
+    let arguments = optional!(step, {
+        let mut rest = Vec::from([identifier(step, Symbol::Variable, true)?]);
+        rest.extend(multiple!(step, {
+            keyword!(step, [b',', b' '])?;
+            identifier(step)
         }));
         Ok(rest)
     }).unwrap_or_default();
-    keyword!(state, [b')', b' ', b':', b'=', b' '])?;
+    keyword!(step, [b')', b' ', b':', b'=', b' '])?;
     return Ok(Function {
-        name: name,
+        identifier: name,
         arguments: arguments,
-        expression: expression(state)?
+        expression: expression(step)?
     })
 }
 
 //> STATEMENT -> NODE
 pub fn node<'input>(
-    state: &mut State<'input>
+    step: &mut Step<'input>
 ) -> Result<Node<'input>, Error<'input>> {return Ok(Node {
-    expression: expression(state)?
+    expression: expression(step)?
 })}
 
 //> STATEMENT -> EQUATION
 pub fn equation<'input>(
-    state: &mut State<'input>
+    step: &mut Step<'input>
 ) -> Result<Equation<'input>, Error<'input>> {
-    let left = expression(state)?;
-    keyword!(state, [b' ', b'=', b' '])?;
+    let left = expression(step)?;
+    keyword!(step, [b' ', b'=', b' '])?;
     return Ok(Equation {
-        expressions: [left, expression(state)?]
+        expressions: [left, expression(step)?]
     });
 }

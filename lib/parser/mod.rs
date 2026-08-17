@@ -3,21 +3,18 @@
 //^
 
 //> HEAD -> MODULES
-pub mod check;
-pub mod checkpoint;
-pub mod choice;
+pub mod coerce;
+pub mod consumers;
+pub mod context;
 pub mod depleted;
 pub mod expression;
 pub mod factor;
-pub mod hook;
-pub mod keyword;
-pub mod more;
-pub mod multiple;
-pub mod optional;
 pub mod position;
+pub mod quantifiers;
 pub mod start;
 pub mod state;
 pub mod statement;
+pub mod step;
 pub mod symbol;
 pub mod term;
 pub mod value;
@@ -28,8 +25,8 @@ use crate::{
     runtime::Runtime
 };
 
-//> HEAD -> STATE
-use state::State;
+//> HEAD -> STEP
+use step::Step;
 
 //> HEAD -> START
 use start::start;
@@ -42,7 +39,7 @@ use start::start;
 //> PARSER -> FUNCTION6
 pub fn parse<'input, Implementation: Runtime<'input>>(
     input: &'input [u8]
-) -> Start<'input> {return match start(&mut State::from(input)) {
+) -> Start<'input> {return match start(&mut Step::from(input)) {
     Ok(start) => start,
-    Err(failure) => Implementation::critical(failure)
+    Err(error) => Implementation::failure(error)
 }}

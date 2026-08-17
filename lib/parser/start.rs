@@ -4,10 +4,10 @@
 
 //> HEAD -> SUPER
 use super::{
-    state::State,
+    step::Step,
     statement::statement,
-    keyword::keyword,
-    multiple::multiple,
+    consumers::keyword,
+    quantifiers::multiple,
     depleted::depleted
 };
 
@@ -23,12 +23,12 @@ use crate::{
 //^
 
 //> START -> FUNCTION
-pub fn start<'input>(state: &mut State<'input>) -> Result<Start<'input>, Error<'input>> {
-    let statements = multiple!(state, {
-        if state.position.index != 0 {keyword!(state, [b'\n'])?}
-        statement(state)
+pub fn start<'input>(step: &mut Step<'input>) -> Result<Start<'input>, Error<'input>> {
+    let (statements, error) = multiple!(step, @{
+        if step.state.position.index != 0 {keyword!(step, [b'\n'])?}
+        statement(step)
     });
-    depleted!(state)?;
+    depleted!(step, error)?;
     return Ok(Start {
         statements: statements
     });

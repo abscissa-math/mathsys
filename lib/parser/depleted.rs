@@ -5,11 +5,10 @@
 //> DEPLETED -> MACRO
 #[macro_export]
 macro_rules! depleted {
-    ($state:ident) => {if $state.input.len() == $state.position.index {Ok(())} else {
-        Err($crate::error::Error::UnfinishedInputParse)
-    }};
+    ($step:ident, $error:ident) => {
+        if $step.input.len() == $step.state.position.index {Ok(())} else {Err($error)}
+    };
 }
-
 
 //> DEPLETED -> EXPORT
 pub use depleted;

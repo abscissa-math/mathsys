@@ -2,7 +2,7 @@
 name = "mathsys"
 version = "2.0.1"
 edition = "2024"
-rust-version = "1.99"
+rust-version = "1.100"
 authors = ["Alejandro Vaz <alejandro.vaz.myt@gmail.com>"]
 description = "The Natural Language of Math."
 license = "MIT"
@@ -31,8 +31,8 @@ debug = false
 enum_dispatch = "0.3"
 enum-as-inner = "0.7"
 elsa = "1.11"
-issuing = "2.0"
-systemstd = "5.1"
+issuing = "4.3"
+systemstd = "7.1"
 unhygienic2 = "0.1"
 
 [dev-dependencies]

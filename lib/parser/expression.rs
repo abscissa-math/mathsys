@@ -4,13 +4,17 @@
 
 //> HEAD -> SUPER
 use super::{
-    state::State,
+    step::Step,
     term::term,
-    keyword::keyword,
-    choice::choice,
-    optional::optional,
-    multiple::multiple,
-    more::more
+    consumers::{
+        keyword,
+        choice
+    },
+    quantifiers::{
+        optional,
+        multiple,
+        more
+    }
 };
 
 //> HEAD -> CRATE
@@ -26,14 +30,14 @@ use crate::{
 
 //> EXPRESSION -> FUNCTION
 pub fn expression<'input>(
-    state: &mut State<'input>
+    step: &mut Step<'input>
 ) -> Result<Expression<'input>, Error<'input>> {
-    let mut terms = Vec::from([(multiple!(state, choice!(state, b'+', b'-')), term(state)?)]);
-    terms.extend(multiple!(state, {
-        optional!(state, keyword!(state, [b' ']));
-        let signs = more!(state, choice!(state, b'+', b'-'))?;
-        if !signs.is_empty() {keyword!(state, [b' '])?}
-        Ok((signs, term(state)?))
+    let mut terms = Vec::from([(multiple!(step, choice!(step, b'+', b'-')), term(step)?)]);
+    terms.extend(multiple!(step, {
+        optional!(step, keyword!(step, [b' ']));
+        let signs = more!(step, choice!(step, b'+', b'-'))?;
+        if !signs.is_empty() {keyword!(step, [b' '])?}
+        Ok((signs, term(step)?))
     }));
     return Ok(Expression {
         terms: terms
