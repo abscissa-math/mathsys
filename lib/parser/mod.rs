@@ -41,5 +41,5 @@ pub fn parse<'input, Implementation: Runtime<'input>>(
     input: &'input [u8]
 ) -> Start<'input> {return match start(&mut Step::from(input)) {
     Ok(start) => start,
-    Err(error) => Implementation::failure(error)
+    Err(error) => Implementation::error(error)
 }}

@@ -44,8 +44,7 @@ fn benches(criterion: &mut Criterion) -> () {
             "data/root.msm" => include_bytes!("../data/root.msm"),
             _ => unsafe {unreachable_unchecked()}
         }}
-        fn warning(_error: Error<'valid>) -> () {}
-        fn failure(_error: Error<'valid>) -> ! {panic!()}
+        fn error(_error: Error<'valid>) -> ! {panic!()}
     }
     let interpreter = Interpreter::from(Handler);
     group.bench_function("full", |bencher| bencher.iter(|| {

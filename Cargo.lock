@@ -490,9 +490,9 @@ dependencies = [
 
 [[package]]
 name = "issuing"
-version = "4.4.0"
+version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05486b0b697649b37dd7ee85a3ab3fcde40a729c52e2931134514c5de32c8bf3"
+checksum = "2b89891a4abe740cff4e09f7b78b0ccba2f24a794d5415debc4cf1617f2fc751"
 dependencies = [
  "enum_dispatch",
 ]
@@ -1144,9 +1144,9 @@ dependencies = [
 
 [[package]]
 name = "systemstd"
-version = "7.1.0"
+version = "7.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fd83533a695376e87ef2ecb40534f248f20e9e3318a662f9749650dcdd8db28"
+checksum = "122af5132a0748c06bca0b1f701884987d2f650a33a0a1ebe9bb5940e4364bf2"
 dependencies = [
  "enum-as-inner",
  "issuing",

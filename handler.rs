@@ -18,12 +18,6 @@ use systemstd::{
 //> HEAD -> ELSA
 use elsa::FrozenMap;
 
-//> HEAD -> SUPER
-use super::severities::{
-    Failure,
-    Warning
-};
-
 
 //^
 //^ HANDLER
@@ -37,17 +31,15 @@ pub struct Handler<'valid> {
 
 //> HANDLER -> RUNTIME
 impl<'valid> Runtime<'valid> for Handler<'valid> {
-    
     fn resolve(&'valid self, module: &'valid str) -> &'valid [u8] {
         return match self.cache.get(module) {
             Some(cached) => cached,
-            None => self.cache.insert(module, System::expect::<Failure, _>(
-                System::expect::<Failure, _>(System::path(module).file::<Read>(
+            None => self.cache.insert(module, System::expect(
+                System::expect(System::path(module).file::<Read>(
                     Handling::AssumeExists
                 )).read_bytes()
             ))
         }
     }
-    fn warning(error: Error<'valid>) -> () {System::error::<Warning>(error)}
-    fn failure(error: Error<'valid>) -> ! {System::error::<Failure>(error)}
+    fn error(error: Error<'valid>) -> ! {System::error(error)}
 }

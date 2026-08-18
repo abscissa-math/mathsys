@@ -9,6 +9,7 @@
 #![feature(new_range)]
 #![feature(phantom_variance_markers)]
 #![feature(generic_const_exprs)]
+#![feature(never_type)]
 #![feature(non_lifetime_binders)]
 #![feature(never_patterns)]
 

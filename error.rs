@@ -5,9 +5,14 @@
 //> HEAD -> ISSUING
 use issuing::{
     Issue,
-    Section,
-    Span
+    Section
 };
+
+//> HEAD -> SYSTEMSTD
+use systemstd::Severity;
+
+//> HEAD -> STD
+use std::panic::set_hook;
 
 
 //>
@@ -28,27 +33,37 @@ impl Into<Issue> for Error {
     fn into(self) -> Issue {return match self {
         Error::UnknownTarget {name} => Issue {
             name: "unknown target",
-            deprecation: Some(format!("unknown target provided")),
             sections: Vec::from([
                 Section::Code {
+                    extends: Box::new(Section::Cause(format!("unknown target provided"))),
                     code: name.to_string(), 
-                    message: Some(format!("unknown target")), 
-                    span: Some(Span::RangeFull(..)), 
                     ..
                 }
             ]),
-            description: Some(format!("unknown target found: {name:?}")),
             ..
         },
         Error::NoTargetProvided => Issue {
             name: "target not provided",
-            description: Some(String::from("interpreter target was not provided")),
+            sections: Vec::from([
+                Section::Cause(format!("interpreter target was not provided"))
+            ]),
             ..
         },
         Error::IncorrectLatexArguments => Issue {
             name: "incorrect arguments for latex",
-            description: Some(format!("usage: `mathsys latex FILE`")),
+            sections: Vec::from([
+                Section::Help(format!("usage: `mathsys latex FILE`"))
+            ]),
             ..
         }
     }}
+}
+
+//> ERROR -> SEVERITY
+impl Severity for Error {
+    type Then = !;
+    fn done() -> Self::Then {
+        set_hook(Box::new(|_| ()));
+        panic!();
+    }
 }
