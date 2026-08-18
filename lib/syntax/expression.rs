@@ -5,6 +5,9 @@
 //> HEAD -> SUPER
 use super::term::Term;
 
+//> HEAD -> NONEMPTY
+use nonempty::NonEmpty;
+
 
 //^
 //^ EXPRESSION
@@ -12,5 +15,5 @@ use super::term::Term;
 
 //> EXPRESSION -> STRUCT
 pub struct Expression<'valid> {
-    pub terms: Vec<(Vec<bool>, Term<'valid>)>
+    pub terms: NonEmpty<(Vec<bool>, Term<'valid>)>
 }

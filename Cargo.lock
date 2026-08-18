@@ -580,6 +580,7 @@ dependencies = [
  "enum-as-inner",
  "enum_dispatch",
  "issuing",
+ "nonempty",
  "systemstd",
  "unhygienic2",
 ]

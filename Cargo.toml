@@ -34,6 +34,7 @@ elsa = "1.11"
 issuing = "4.3"
 systemstd = "7.1"
 unhygienic2 = "0.1"
+nonempty = "0.12.0"
 
 [dev-dependencies]
 criterion = "0.8"

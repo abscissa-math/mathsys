@@ -58,19 +58,16 @@ macro_rules! multiple {
 #[macro_export]
 macro_rules! more {
     ($call:expr, $step:ident $(, $argument:expr)*) => {{
-        let items = $crate::parser::quantifiers::multiple!($call, $step $(, $argument)*);
+        let mut items = $crate::parser::quantifiers::multiple!(
+            $call, 
+            $step 
+            $(, $argument)*
+        );
         match items.len() {
-            1.. => Ok(items),
+            1.. => Ok(nonempty::NonEmpty::from((items.remove(0), items))),
             0 => Err($crate::error::Error::CouldntParseMore)
         }
     }};
-    (@$call:expr, $step:ident $(, $argument:expr)*) => {{
-        let items = $crate::parser::quantifiers::multiple!(@$call, $step $(, $argument)*);
-        match items.0.len() {
-            1.. => Ok(items),
-            0 => Err($crate::error::Error::CouldntParseMore)
-        }
-    }}
 }
 
 //> QUANTIFIERS -> EXPORTS

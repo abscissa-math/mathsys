@@ -19,6 +19,9 @@ use crate::{
     syntax::term::Term
 };
 
+//> HEAD -> NONEMPTY
+use nonempty::NonEmpty;
+
 
 //^
 //^ TERM
@@ -26,7 +29,8 @@ use crate::{
 
 //> TERM -> FUNCTION
 pub fn term<'input>(step: &mut Step<'input>) -> Result<Term<'input>, Error<'input>> {
-    let mut numerator = Vec::from([factor(step)?]);
+    let first = factor(step)?;
+    let mut numerator = Vec::new();
     let mut denominator = Vec::new();
     let mut position = true;
     for (change, factor) in multiple!({
@@ -39,7 +43,7 @@ pub fn term<'input>(step: &mut Step<'input>) -> Result<Term<'input>, Error<'inpu
         }.push(factor);
     }
     return Ok(Term {
-        numerator: numerator,
+        numerator: Box::new(NonEmpty::from((first, numerator))),
         denominator: denominator
     })
 }
